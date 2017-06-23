@@ -18,9 +18,9 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.test_files = Dir["spec/**/*"]
 
-  s.add_dependency "rails", "~> 3.2.22.5"
-  s.add_dependency "globalize", "~> 3.1.0"
+  s.add_dependency "rails", "~> 4.2.7.1"
+  s.add_dependency "httparty"
   s.add_dependency 'planner-core'
 
-  s.add_development_dependency "sqlite3"
+  # s.add_development_dependency "sqlite3"
 end
