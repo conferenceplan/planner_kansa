@@ -17,6 +17,8 @@ namespace :kansa do
     conference = ENV['CONF']
     user = ENV['USER']
     key = ENV['KEY']
+    
+    current = nil
 
     Apartment::Tenant.switch!(org)
     tenant =  PlannerMulti::Conference.find_by_subsite conference
@@ -28,7 +30,7 @@ namespace :kansa do
           config.key = key
         end  
         
-        m = Kansa::Member.new
+        kansa_api = Kansa::Member.new
 
         # since to get members (from last run)
         since_date = nil
@@ -38,24 +40,60 @@ namespace :kansa do
 
         currentRunTime = Time.now
 
-        res = m.get_members since_date if since_date
-        res = m.get_members since_date if !since_date
+        res = kansa_api.get_members since_date if since_date
+        res = kansa_api.get_members since_date if !since_date
         
+        
+        begin
         Person.transaction do
           res.each do |m|
             if m && m['member_number']
+
+              # puts "*************** START"
               # puts m.to_s #if !m['public_last_name'] #m['membership'] != "Supporter"
-              person = Planner::KansaImporter.import_person m
-              Planner::KansaImporter.create_member_details(person, m)
-              Planner::KansaImporter.create_postal_address(person, m)
+              current = m
+              
+              # 1. check that the reg detail exists - if so it is an update
+              # check to see if person with that member number exists
+              reg_detail = RegistrationDetail.find_by(
+                registration_number: m['member_number']
+                )
+              if reg_detail
+                p = Planner::KansaImporter.find_kansa_person(m)
+                if p == reg_detail.person
+                  # puts "UPDATE " + m["legal_name"]
+                  # puts "UPDATE " + m["member_number"]
+                  # puts "UPDATE " + m["membership"]
+                  reg_detail.registration_number = m['member_number']
+                  reg_detail.registration_type = m['membership']
+                  reg_detail.save!
+                  # puts reg_detail.to_json
+                  # puts reg_detail.person.to_json
+                  # TODO - we may want to update name, email etc if applicable?
+                # else
+                #   puts "UPDATE MISTMATCH????"
+                #   puts reg_detail.person.to_json
+                end
+              else
+                # puts "CREATE " + m["legal_name"]
+                person = Planner::KansaImporter.import_person m
+                Planner::KansaImporter.create_member_details(person, m)
+              end
+
+              # puts "*************** END"
             end
           end
         end
         
+        rescue => ex
+          Rails.logger.error ex.message
+          Rails.logger.error current
+        end
+        
         # Store the date in job info
-        jobInfo.last_run = currentRunTime
-        jobInfo.job_name = :kansa_import
-        jobInfo.save!
+        # jobInfo.last_run = currentRunTime
+        # jobInfo.job_name = :kansa_import
+        # jobInfo.save!
       end
     end
   end
