@@ -14,7 +14,7 @@ module Kansa
       if since
         opts = {
           query: {
-            since: since
+            since: since.iso8601
           }
         }
       end

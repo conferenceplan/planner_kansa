@@ -87,13 +87,14 @@ namespace :kansa do
         
         rescue => ex
           Rails.logger.error ex.message
+          # Rails.logger.error ex.backtrace
           Rails.logger.error current
         end
         
         # Store the date in job info
-        # jobInfo.last_run = currentRunTime
-        # jobInfo.job_name = :kansa_import
-        # jobInfo.save!
+        jobInfo.last_run = currentRunTime
+        jobInfo.job_name = :kansa_import
+        jobInfo.save!
       end
     end
   end

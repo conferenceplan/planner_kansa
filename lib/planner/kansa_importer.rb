@@ -16,7 +16,7 @@ module Planner
         if !public_first_name.blank?
           public_last_name = legal_name
           public_last_name.slice!(public_first_name)
-          public_last_name.strip!
+          public_last_name.strip! if !public_last_name.blank?
         end
       end
       
@@ -31,6 +31,7 @@ module Planner
     
     def import_person(kansa_person)
       legal_name = kansa_person['legal_name']
+      preferred_name = kansa_person['preferred_name']
       public_first_name = kansa_person['public_first_name']
       public_last_name = kansa_person['public_last_name']
       email= kansa_person['email']
@@ -40,21 +41,22 @@ module Planner
       if !person && !public_last_name.blank?
         # The public name may be a pseudonymn
         # compare with the legal name to make sure
-        if legal_name.include?(public_last_name.strip)
+        if !public_last_name.blank? &&
+           legal_name.include?(public_last_name.strip)
           first_name = public_first_name
           if first_name.blank?
             first_name = legal_name
             first_name.slice!(public_last_name)
-            first_name.strip!
+            first_name.strip! if !first_name.blank?
           end
           person = create_person(first_name, public_last_name)
         end
       end
           
       if !person
-        name_parts = legal_name.split
+        name_parts = !legal_name.blank? ? legal_name.split : preferred_name.split
         first_name_candidate = name_parts[0..(name_parts.size-2)].join(" ").strip
-        last_name_candidate = name_parts.last.strip
+        last_name_candidate = !name_parts.last.blank? ? name_parts.last.strip : ''
         person = create_person(first_name_candidate, last_name_candidate)
         
         if !public_last_name.blank? # create pseudonymn
