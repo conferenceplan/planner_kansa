@@ -75,13 +75,23 @@ module Planner
     
     def create_member_details(person, kansa_person)
       if !person.registrationDetail
-        registrationDetail = RegistrationDetail.create({
-          person_id: person.id,
-          registration_number: kansa_person['member_number'],
-          registration_type: kansa_person['membership'],
-          registered: true,
-          can_share: false
-        })
+        if kansa_person['member_number'].blank? && !kansa_person['daypass'].blank?
+          registrationDetail = RegistrationDetail.create({
+            person_id: person.id,
+            registration_number: kansa_person['id'].to_s,
+            registration_type: 'daypass',
+            registered: true,
+            can_share: false
+          })
+        else
+          registrationDetail = RegistrationDetail.create({
+            person_id: person.id,
+            registration_number: kansa_person['member_number'],
+            registration_type: kansa_person['membership'],
+            registered: true,
+            can_share: false
+          })
+        end
       end
     end
 

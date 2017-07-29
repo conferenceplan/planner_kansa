@@ -47,7 +47,7 @@ namespace :kansa do
         begin
         Person.transaction do
           res.each do |m|
-            if m && m['member_number']
+            if m && (m['member_number'] || m['daypass'])
 
               # puts "*************** START"
               # puts m.to_s #if !m['public_last_name'] #m['membership'] != "Supporter"
@@ -55,17 +55,28 @@ namespace :kansa do
               
               # 1. check that the reg detail exists - if so it is an update
               # check to see if person with that member number exists
-              reg_detail = RegistrationDetail.find_by(
-                registration_number: m['member_number']
-                )
+              if !m['member_number'].blank?
+                reg_detail = RegistrationDetail.find_by(
+                  registration_number: m['member_number']
+                  )
+              else
+                reg_detail = RegistrationDetail.find_by(
+                  registration_number: m['id'].to_s
+                  )
+              end
               if reg_detail
                 p = Planner::KansaImporter.find_kansa_person(m)
                 if p == reg_detail.person
                   # puts "UPDATE " + m["legal_name"]
                   # puts "UPDATE " + m["member_number"]
                   # puts "UPDATE " + m["membership"]
-                  reg_detail.registration_number = m['member_number']
-                  reg_detail.registration_type = m['membership']
+                  if m['daypass']
+                    reg_detail.registration_number = m['id'].to_s 
+                    reg_detail.registration_type = 'daypass'
+                  else
+                    reg_detail.registration_number = m['member_number']
+                    reg_detail.registration_type = m['membership']
+                  end
                   reg_detail.save!
                   # puts reg_detail.to_json
                   # puts reg_detail.person.to_json
